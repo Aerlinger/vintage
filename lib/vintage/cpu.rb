@@ -4,8 +4,15 @@ module Vintage
       # Registers of CPU include 8-bit X and Y registers as well as an accumulator (A) register
       @registers = { :a => 0, :x => 0, :y => 0 }
 
-      # States of 6502 CPU (z => zero?, c => carry?, n => negative?)
-      @flags     = { :z => 0, :c => 0, :n => 0 }
+      # States of 6502 CPU:
+      #   * n => negative?
+      #   * v => overflow?
+      #   * b => break
+      #   * d => decimal?
+      #   * i => interrupts disabled)
+      #   * z => zero?
+      #   * c => carry?
+      @flags     = { :n => 0, :v => 0, :b => 0, :d => 0, :i => 0, :z => 0, :c => 0 }
     end
 
     def [](key)
