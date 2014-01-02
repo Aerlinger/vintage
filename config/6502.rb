@@ -8,7 +8,9 @@
 NOP {} # does nothing
 
 # 00
-BRK(:b) { raise StopIteration } # halts execution
+BRK(:b) {
+  raise StopIteration
+} # halts execution
 
 ## Storage
 
@@ -22,30 +24,44 @@ LDX(:n, :v) { cpu[:x] = mem[e] }
 LDY(:n, :v) { cpu[:y] = mem[e] }
 
 TXA(:n, :v) { cpu[:a] = cpu[:x] }
+TYA(:n, :z) { cpu[:a] = cpu[:y] }
+TAX(:n, :z) { cpu[:x] = cpu[:a] }
+TAY(:n, :z) { cpu[:y] = cpu[:a] }
+TSX(:n, :z) { cpu[:x] = mem.get_stack }
+TXS(:n, :z) { mem.set_stack(cpu[:x])  }
 
 STA { mem[e] = cpu[:a] }
 
+PLA { cpu[:a] = mem.pull }
+PHA { mem.push cpu[:a] }
+
 ## Counters
 
-# Overflow, zero, signed?
+# Overflow?
 INX(:n, :z) { cpu[:x] += 1 }
 DEX(:n, :z) { cpu[:x] -= 1 }
 
 DEC(:n, :z) { cpu.result(mem[e] -= 1) }
 INC(:n, :z) { cpu.result(mem[e] += 1) }
 
+INY(:n, :z) { cpu[:y] += 1 }
+DEY(:n, :z) { cpu[:y] -= 1 }
+
 ## Flow control
 
 JMP { mem.jump(e) }
-
 JSR { mem.jsr(e) }
 RTS { mem.rts }
 
 BNE { mem.branch(cpu[:z] == 0, e) }
 BEQ { mem.branch(cpu[:z] == 1, e) }
 BPL { mem.branch(cpu[:n] == 0, e) }
+BMI { mem.branch(cpu[:n] == 1, e) }
 BCS { mem.branch(cpu[:c] == 1, e) }
 BCC { mem.branch(cpu[:c] == 0, e) }
+BVS { mem.branch(cpu[:v] == 1, e) }
+BVC { mem.branch(cpu[:v] == 0, e) }
+
 
 ## Comparisons
 
@@ -53,6 +69,12 @@ CPX(:n, :z, :c) do
   cpu.carry_if(cpu[:x] >= mem[e])
 
   cpu.result(cpu[:x] - mem[e])
+end
+
+CPY(:n, :z, :c) do
+  cpu.carry_if(cpu[:y] >= mem[e])
+
+  cpu.result(cpu[:y] - mem[e])
 end
 
 CMP(:n, :z, :c) do
@@ -65,7 +87,14 @@ end
 ## Bitwise operations
 
 AND(:n, :z) { cpu[:a] &= mem[e] }
+EOR(:n, :z) { cpu[:a] ^= mem[e] }
+ORA(:n, :z) { cpu[:a] |= mem[e] }
 BIT(:n, :v, :z) { cpu.result(cpu[:a] & mem[e]) }
+
+ASL(:n, :z, :c) do
+  cpu.carry_if(cpu[:a] > 0x7F)
+  cpu[:a] <<= 1
+end
 
 LSR(:n, :z, :c) do
   t = (cpu[:a] >> 1) & 0x7F
@@ -74,10 +103,29 @@ LSR(:n, :z, :c) do
   cpu[:a] = t
 end
 
+# Todo, what about accumulator addressing mode?
+ROL(:n, :z, :c) do
+  t = cpu[:a]
+  cpu[:a] <<= 1
+  cpu[:a] += cpu[:c]
+  cpu.carry_if(t > 0x7f)
+end
+
+# Todo, what about accumulator addressing mode?
+ROR(:n, :z, :c) do
+  t = cpu[:a]
+  cpu[:a] >>= 1
+  cpu[:a] += cpu[:c] * 128
+  cpu.carry_if(t.odd?)
+end
+
 ## Arithmetic
 
 SEC { cpu.set_carry }
+SEI { cpu.set_interrupt }
 CLC { cpu.clear_carry }
+CLI { cpu.clear_interrupt }
+CLV { cpu.clear_overflow }
 
 ADC(:n, :v, :z, :c) do
   t = cpu[:a] + mem[e] + cpu[:c]
@@ -93,60 +141,21 @@ SBC(:n, :v, :z, :c) do
   cpu[:a] = t
 end
 
-## Additions (untested):
-
+STX { mem[e] = cpu[:x] }
 STY { mem[e] = cpu[:y] }
 
-STX { mem[e] = cpu[:x] }
 
-ASL(:n, :z, :c) do
-  cpu.carry_if(cpu[:a] > 0x7F)
-  cpu[:a] <<= 1
+PHP { mem.push cpu.get_flag_mask }
+PLP { cpu.set_status mem.pull  }
+
+RTI do
+  mem.set_status mem.pull
+  mem.jump(mem.int16([mem.pull, mem.pull]))
 end
 
-BPL { mem.branch(cpu[:n] == 1, e) }
-BVC { mem.branch(cpu[:v] == 0, e) }
-BVS { mem.branch(cpu[:v] == 1, e) }
+SED { raise NotImplementedError "SED (Decimal mode) not yet implemented" }
+CLD { raise NotImplementedError "CLD (Decimal mode) not yet implemented" }
 
-CLD { raise NotImplementedError "CLD not yet implemented" }
-
-CLI { cpu.clear_interrupt }
-CLV { cpu.clear_overflow }
-
-DEY(:n, :z) { cpu[:y] -= 1 }
-
-#CMP { raise NotImplementedError "CMP not yet implemented" }
-EOR(:n, :z) { cpu[:a] ^= mem[e] }
-ORA(:n, :z) { cpu[:a] |= mem[e] }
-PLA { cpu[:a] = mem.pull }
-PHA { mem.push cpu[:a] }
-
-ROL(:n, :z, :c) do
-  t = cpu[:a]
-  cpu[:a] <<= 1
-  cpu[:a] += cpu[:c]
-  cpu.carry_if(t > 0x7f)
-end
-
-ROR(:n, :z, :c) do
-  t = cpu[:a]
-  cpu[:a] >>= 1
-  cpu[:a] += cpu[:c] * 128
-  cpu.carry_if(t.odd?)
-end
-
-PHP { raise NotImplementedError "PHP not yet implemented" }
-PLP { raise NotImplementedError "PLP not yet implemented" }
-
-RTI { raise NotImplementedError "RTI not yet implemented" }
-SED { raise NotImplementedError "SED not yet implemented" }
-SEI { cpu.set_interrupt }
-
-TAY(:n, :z) { cpu[:y] = cpu[:a] }
-TAX(:n, :z) { cpu[:x] = cpu[:a] }
-TSX(:n, :z) { cpu[:x] = mem.sp }
-TYA(:n, :z) { cpu[:a] = cpu[:y] }
-TXS(:n, :z) { mem.load_stack(cpu[:x])  }
-#BNE { raise "BNE not yet implemented" }
-
-RESET { raise NotImplementedError "RESET not yet implemented" }
+RESET { raise NotImplementedError "RESET (internal) not yet implemented" }
+S_IRQ { raise NotImplementedError "S_IRQ (internal) not yet implemented" }
+S_NMI { raise NotImplementedError "S_NMI (internal) not yet implemented" }

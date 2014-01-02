@@ -72,6 +72,14 @@ module Vintage
       @memory[STACK_OFFSET + @sp]
     end
 
+    def set_stack(value)
+      @sp = value
+    end
+
+    def get_stack
+      @sp
+    end
+
     def int16(bytes)
       bytes.pack("c*").unpack("v").first
     end
