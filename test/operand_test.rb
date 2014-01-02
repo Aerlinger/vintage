@@ -33,6 +33,12 @@ describe "Operand" do
     read([0x01], "ZX", x: 0x10).must_equal(expected)
   end
 
+  it "implements zero page + y addressing" do
+    expected = { address: 0x11, pc: mem.pc + 1 }
+
+    read([0x01], "ZY", y: 0x10).must_equal(expected)
+  end
+
   it "implements indirect + x addressing" do
     mem[0x12]   = 0x37
     mem[0x13]   = 0x13

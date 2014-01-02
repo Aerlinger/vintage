@@ -15,6 +15,8 @@ module Vintage
         mem.next
       when "ZX" # Zero Page, X
         mem.next + x
+      when "ZY" # Zero Page, Y
+        mem.next + y
       when  "AB" # Absolute
         mem.int16([mem.next, mem.next])
       when  "AX" # Absolute, Y
