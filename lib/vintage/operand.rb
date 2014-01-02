@@ -1,4 +1,5 @@
 module Vintage
+  # See http://www.obelisk.demon.co.uk/6502/addressing.html For more information on 6502 addressing modes
   module Operand
     def self.read(mem, mode, x, y)
       case mode
@@ -16,6 +17,10 @@ module Vintage
         mem.next + x
       when  "AB" # Absolute
         mem.int16([mem.next, mem.next])
+      when  "AX" # Absolute, Y
+        mem.int16([mem.next, mem.next]) + x
+      when  "AY" # Absolute, Y
+        mem.int16([mem.next, mem.next]) + y
       when "IX" # Indexed Indirect
         e = mem.next
 

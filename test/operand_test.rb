@@ -9,6 +9,12 @@ describe "Operand" do
     read([0x37, 0x13], "AB").must_equal(expected)
   end
 
+  it "implements absolute + x addressing" do
+    expected = { address: 0x1337, pc: mem.pc + 2 }
+
+    read([0x30, 0x13], "AX", x: 0x07).must_equal(expected)
+  end
+
   it "implements absolute + y addressing" do
     expected = { address: 0x1337, pc: mem.pc + 2 }
 
