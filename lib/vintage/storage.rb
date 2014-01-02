@@ -1,4 +1,7 @@
 module Vintage
+
+  ##
+  # 16-bit Virtual Memory of a 6502 system
   class Storage
     PROGRAM_OFFSET = 0x0600
     STACK_OFFSET   = 0x0100
@@ -29,6 +32,8 @@ module Vintage
     def next
       @memory[@pc].tap { @pc += 1 }
     end
+
+    # jump, branch, rts, jsr should be defined in CPU rather than mem?
 
     def jump(address)
       @pc = address

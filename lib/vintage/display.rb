@@ -21,7 +21,7 @@ module Vintage
     Pixel = Struct.new(:x, :y, :color)
     
     Colors = [ Color.black,
-               Color.white, 
+               Color.white,
                Color.red,  
                Color.cyan,  
                Color.magenta,

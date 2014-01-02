@@ -1,3 +1,9 @@
+##
+# Ruby-based DSL for defining behavior for each 6502 Opcode
+#   Opcodes are defined in all-caps as "ghost" methods. The behavior of each opcode is defined within the block.
+#   Opcodes are mapped to their respective definitions in 6502.csv during the first stage of loading the simulator
+#   (See config.rb)
+
 NOP { }                         # does nothing
 BRK { raise StopIteration }     # halts execution
 

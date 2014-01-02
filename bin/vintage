@@ -3,4 +3,4 @@
 require_relative "../lib/vintage"
 require_relative "../lib/vintage/display"
 
-Vintage::Simulator.run(ARGV[0], Vintage::Display.new)
+Vintage::Simulator.run(ARGV[0], nil)#Vintage::Display.new)

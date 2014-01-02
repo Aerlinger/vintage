@@ -1,7 +1,10 @@
 module Vintage
   class CPU
     def initialize
+      # Registers of CPU include 8-bit X and Y registers as well as an accumulator (A) register
       @registers = { :a => 0, :x => 0, :y => 0 }
+
+      # States of 6502 CPU (z => zero?, c => carry?, n => negative?)
       @flags     = { :z => 0, :c => 0, :n => 0 }
     end
 
