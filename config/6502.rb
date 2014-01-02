@@ -4,13 +4,21 @@
 #   Opcodes are mapped to their respective definitions in 6502.csv during the first stage of loading the simulator
 #   (See config.rb)
 
+# EA
 NOP { }                         # does nothing
+
+# 00
 BRK { raise StopIteration }     # halts execution
 
 ## Storage
 
+# Load Accumulator (LDA) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
 LDA { cpu[:a] = mem[e] }
+
+# Load Accumulator (LDX) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
 LDX { cpu[:x] = mem[e] }
+
+# Load Accumulator (LDY) Addressing Modes: ($AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
 LDY { cpu[:y] = mem[e] }
 
 TXA { cpu[:a] = cpu[:x] }
