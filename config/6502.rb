@@ -15,10 +15,10 @@ BRK(:b) { raise StopIteration } # halts execution
 # Load Accumulator (LDA) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
 LDA(:n, :v) { cpu[:a] = mem[e] }
 
-# Load Accumulator (LDX) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
+# Load X Register (LDX) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
 LDX(:n, :v) { cpu[:x] = mem[e] }
 
-# Load Accumulator (LDY) Addressing Modes: ($AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
+# Load Y register (LDY) Addressing Modes: ($AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
 LDY(:n, :v) { cpu[:y] = mem[e] }
 
 TXA(:n, :v) { cpu[:a] = cpu[:x] }
@@ -116,19 +116,37 @@ CLV { cpu.clear_overflow }
 DEY(:n, :z) { cpu[:y] -= 1 }
 
 #CMP { raise NotImplementedError "CMP not yet implemented" }
-EOR(:n, :z) { raise NotImplementedError "EOR not yet implemented" }
-ORA(:n, :z) { raise NotImplementedError "ORA not yet implemented" }
+EOR(:n, :z) { cpu[:a] ^= mem[e] }
+ORA(:n, :z) { cpu[:a] |= mem[e] }
+PLA { cpu[:a] = mem.pull }
+PHA { mem.push cpu[:a] }
+
+ROL(:n, :z, :c) do
+  t = cpu[:a]
+  cpu[:a] <<= 1
+  cpu[:a] += cpu[:c]
+  cpu.carry_if(t > 0x7f)
+end
+
+ROR(:n, :z, :c) do
+  t = cpu[:a]
+  cpu[:a] >>= 1
+  cpu[:a] += cpu[:c] * 128
+  cpu.carry_if(t.odd?)
+end
+
 PHP { raise NotImplementedError "PHP not yet implemented" }
 PLP { raise NotImplementedError "PLP not yet implemented" }
-ROL(:n, :z, :c) { raise NotImplementedError "ROL not yet implemented" }
-ROR(:n, :z, :c) { raise NotImplementedError "ROR not yet implemented" }
+
 RTI { raise NotImplementedError "RTI not yet implemented" }
 SED { raise NotImplementedError "SED not yet implemented" }
-SEI { raise NotImplementedError "SEI not yet implemented" }
-TAY(:n, :z) { raise NotImplementedError "TAY not yet implemented" }
-TSX(:n, :z) { raise NotImplementedError "TSX not yet implemented" }
-TXS(:n, :z) { raise NotImplementedError "TXS not yet implemented" }
-TYA(:n, :z) { raise NotImplementedError "TYA not yet implemented" }
+SEI { cpu.set_interrupt }
+
+TAY(:n, :z) { cpu[:y] = cpu[:a] }
+TAX(:n, :z) { cpu[:x] = cpu[:a] }
+TSX(:n, :z) { cpu[:x] = mem.sp }
+TYA(:n, :z) { cpu[:a] = cpu[:y] }
+TXS(:n, :z) { mem.load_stack(cpu[:x])  }
 #BNE { raise "BNE not yet implemented" }
 
 RESET { raise NotImplementedError "RESET not yet implemented" }
