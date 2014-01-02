@@ -22,6 +22,7 @@ module Vintage
     # Table lookup of mappings between Opcodes and their corresponding Instructions
     def load_codes
       csv_data = CSV.read("#{CONFIG_DIR}/6502.csv")
+                    .reject { |r| r[0].start_with?('!') }
                     .map { |r| [r[0].to_i(16), [r[1].to_sym, r[2]]] }
 
       @codes = Hash[csv_data]
