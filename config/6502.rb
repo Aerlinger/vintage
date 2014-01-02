@@ -8,30 +8,31 @@
 NOP {} # does nothing
 
 # 00
-BRK { raise StopIteration } # halts execution
+BRK(:b) { raise StopIteration } # halts execution
 
 ## Storage
 
 # Load Accumulator (LDA) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
-LDA { cpu[:a] = mem[e] }
+LDA(:n, :v) { cpu[:a] = mem[e] }
 
 # Load Accumulator (LDX) Addressing Modes: (AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
-LDX { cpu[:x] = mem[e] }
+LDX(:n, :v) { cpu[:x] = mem[e] }
 
 # Load Accumulator (LDY) Addressing Modes: ($AD => AB, BD => AX, B9 => AY, IM, ZP, ZX, IX, IY)
-LDY { cpu[:y] = mem[e] }
+LDY(:n, :v) { cpu[:y] = mem[e] }
 
-TXA { cpu[:a] = cpu[:x] }
+TXA(:n, :v) { cpu[:a] = cpu[:x] }
 
 STA { mem[e] = cpu[:a] }
 
 ## Counters
 
-INX { cpu[:x] += 1 }
-DEX { cpu[:x] -= 1 }
+# Overflow, zero, signed?
+INX(:n, :z) { cpu[:x] += 1 }
+DEX(:n, :z) { cpu[:x] -= 1 }
 
-DEC { cpu.result(mem[e] -= 1) }
-INC { cpu.result(mem[e] += 1) }
+DEC(:n, :z) { cpu.result(mem[e] -= 1) }
+INC(:n, :z) { cpu.result(mem[e] += 1) }
 
 ## Flow control
 
@@ -48,13 +49,13 @@ BCC { mem.branch(cpu[:c] == 0, e) }
 
 ## Comparisons
 
-CPX do
+CPX(:n, :z, :c) do
   cpu.carry_if(cpu[:x] >= mem[e])
 
   cpu.result(cpu[:x] - mem[e])
 end
 
-CMP do
+CMP(:n, :z, :c) do
   cpu.carry_if(cpu[:a] >= mem[e])
 
   cpu.result(cpu[:a] - mem[e])
@@ -63,10 +64,10 @@ end
 
 ## Bitwise operations
 
-AND { cpu[:a] &= mem[e] }
-BIT { cpu.result(cpu[:a] & mem[e]) }
+AND(:n, :z) { cpu[:a] &= mem[e] }
+BIT(:n, :v, :z) { cpu.result(cpu[:a] & mem[e]) }
 
-LSR do
+LSR(:n, :z, :c) do
   t = (cpu[:a] >> 1) & 0x7F
 
   cpu.carry_if(cpu[:a][0] == 1)
@@ -78,14 +79,14 @@ end
 SEC { cpu.set_carry }
 CLC { cpu.clear_carry }
 
-ADC do
+ADC(:n, :v, :z, :c) do
   t = cpu[:a] + mem[e] + cpu[:c]
 
   cpu.carry_if(t > 0xff)
   cpu[:a] = t
 end
 
-SBC do
+SBC(:n, :v, :z, :c) do
   t = cpu[:a] - mem[e] - (cpu[:c] == 0 ? 1 : 0)
 
   cpu.carry_if(t >= 0)
@@ -95,33 +96,39 @@ end
 ## Additions (untested):
 
 STY { mem[e] = cpu[:y] }
+
 STX { mem[e] = cpu[:x] }
-ASL do
+
+ASL(:n, :z, :c) do
   cpu.carry_if(cpu[:a] > 0x7F)
   cpu[:a] <<= 1
 end
 
-BMI { raise NotImplementedError "BMI not yet implemented" }
-BVC { raise NotImplementedError "BVC not yet implemented" }
-BVS { raise NotImplementedError "BVS not yet implemented" }
+BPL { mem.branch(cpu[:n] == 1, e) }
+BVC { mem.branch(cpu[:v] == 0, e) }
+BVS { mem.branch(cpu[:v] == 1, e) }
+
 CLD { raise NotImplementedError "CLD not yet implemented" }
-CLI { raise NotImplementedError "CLI not yet implemented" }
-CLV { raise NotImplementedError "CLV not yet implemented" }
-DEY { raise NotImplementedError "DEY not yet implemented" }
-CMP { raise NotImplementedError "CMP not yet implemented" }
-EOR { raise NotImplementedError "EOR not yet implemented" }
-ORA { raise NotImplementedError "ORA not yet implemented" }
+
+CLI { cpu.clear_interrupt }
+CLV { cpu.clear_overflow }
+
+DEY(:n, :z) { cpu[:y] -= 1 }
+
+#CMP { raise NotImplementedError "CMP not yet implemented" }
+EOR(:n, :z) { raise NotImplementedError "EOR not yet implemented" }
+ORA(:n, :z) { raise NotImplementedError "ORA not yet implemented" }
 PHP { raise NotImplementedError "PHP not yet implemented" }
 PLP { raise NotImplementedError "PLP not yet implemented" }
-ROL { raise NotImplementedError "ROL not yet implemented" }
-ROR { raise NotImplementedError "ROR not yet implemented" }
+ROL(:n, :z, :c) { raise NotImplementedError "ROL not yet implemented" }
+ROR(:n, :z, :c) { raise NotImplementedError "ROR not yet implemented" }
 RTI { raise NotImplementedError "RTI not yet implemented" }
 SED { raise NotImplementedError "SED not yet implemented" }
 SEI { raise NotImplementedError "SEI not yet implemented" }
-TAY { raise NotImplementedError "TAY not yet implemented" }
-TSX { raise NotImplementedError "TSX not yet implemented" }
-TXS { raise NotImplementedError "TXS not yet implemented" }
-TYA { raise NotImplementedError "TYA not yet implemented" }
+TAY(:n, :z) { raise NotImplementedError "TAY not yet implemented" }
+TSX(:n, :z) { raise NotImplementedError "TSX not yet implemented" }
+TXS(:n, :z) { raise NotImplementedError "TXS not yet implemented" }
+TYA(:n, :z) { raise NotImplementedError "TYA not yet implemented" }
 #BNE { raise "BNE not yet implemented" }
 
 RESET { raise NotImplementedError "RESET not yet implemented" }
