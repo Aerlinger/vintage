@@ -1,4 +1,4 @@
-require_relative "helper"
+require "spec_helper"
 
 describe "CPU" do
   let(:cpu) { Vintage::CPU.new }
@@ -7,7 +7,7 @@ describe "CPU" do
   let(:flags)     { [:c, :n, :z] }
 
   it "initializes registers and flags to zero" do
-    (registers + flags).each { |e| cpu[e].must_equal(0) }
+    (registers + flags).each { |e| cpu[e].should eq(0) }
   end
 
   it "allows directly setting registers" do
@@ -15,16 +15,16 @@ describe "CPU" do
       value  = rand(0xff)
 
       cpu[e] = value
-      cpu[e].must_equal(value)
+      cpu[e].should eq(value)
     end
   end
 
   it "does not allow directly setting flags" do
     flags.each do |e|
-      value  = rand(0xff)
-
-      err = -> { cpu[e] = value }.must_raise(ArgumentError)
-      err.message.must_equal "#{e.inspect} is not a register"
+      expect {
+        value  = rand(0xff)
+        cpu[e] = value
+      }.to raise_error(ArgumentError, "#{e.inspect} is not a register")
     end
   end
 
@@ -51,7 +51,7 @@ describe "CPU" do
   end
 
   it "truncates results to fit in a single byte" do
-    cpu.result(0x1337).must_equal(0x37)
+    cpu.result(0x1337).should eq(0x37)
   end
 
   it "sets z=1 when a result is zero, sets z=0 otherwise" do
@@ -74,17 +74,17 @@ describe "CPU" do
     registers.each do |e|
       cpu[e] = 0x100
       
-      cpu[e].must_equal(0)
+      cpu[e].should eq(0)
       expect_flags(:z => 1, :n => 0)
 
       cpu[e] -= 1
       
-      cpu[e].must_equal(0xff)
+      cpu[e].should eq(0xff)
       expect_flags(:z => 0, :n => 1)
     end
   end
 
   def expect_flags(params)
-    params.each { |k,v| cpu[k].must_equal(v) }
+    params.each { |k,v| cpu[k].should eq(v) }
   end
 end

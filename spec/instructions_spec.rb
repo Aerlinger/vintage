@@ -1,4 +1,4 @@
-require_relative "helper"
+require "spec_helper"
 
 describe "Instructions" do
   let(:cpu) { Vintage::CPU.new }

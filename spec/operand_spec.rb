@@ -1,4 +1,4 @@
-require_relative "helper"
+require "spec_helper"
 
 describe "Operand" do
   let(:mem) { Vintage::Storage.new }
@@ -6,37 +6,37 @@ describe "Operand" do
   it "implements absolute addressing" do
     expected = { address: 0x1337, pc: mem.pc + 2 }
 
-    read([0x37, 0x13], "AB").must_equal(expected)
+    read([0x37, 0x13], "AB").should eq(expected)
   end
 
   it "implements absolute + x addressing" do
     expected = { address: 0x1337, pc: mem.pc + 2 }
 
-    read([0x30, 0x13], "AX", x: 0x07).must_equal(expected)
+    read([0x30, 0x13], "AX", x: 0x07).should eq(expected)
   end
 
   it "implements absolute + y addressing" do
     expected = { address: 0x1337, pc: mem.pc + 2 }
 
-    read([0x30, 0x13], "AY", y: 0x07).must_equal(expected)
+    read([0x30, 0x13], "AY", y: 0x07).should eq(expected)
   end
 
   it "implements zero page addressing" do
     expected = { address: 0x01, pc: mem.pc + 1 }
 
-    read([0x01], "ZP").must_equal(expected)
+    read([0x01], "ZP").should eq(expected)
   end
 
   it "implements zero page + x addressing" do
     expected = { address: 0x11, pc: mem.pc + 1 }
 
-    read([0x01], "ZX", x: 0x10).must_equal(expected)
+    read([0x01], "ZX", x: 0x10).should eq(expected)
   end
 
   it "implements zero page + y addressing" do
     expected = { address: 0x11, pc: mem.pc + 1 }
 
-    read([0x01], "ZY", y: 0x10).must_equal(expected)
+    read([0x01], "ZY", y: 0x10).should eq(expected)
   end
 
   it "implements indirect + x addressing" do
@@ -45,7 +45,7 @@ describe "Operand" do
 
     expected = { address: 0x1337,  pc: mem.pc + 1 }
 
-    read([0x10], "IX", x: 2).must_equal(expected)
+    read([0x10], "IX", x: 2).should eq(expected)
   end
 
   it "implements indirect + y addressing" do
@@ -54,20 +54,20 @@ describe "Operand" do
 
     expected = { address: 0x1337, pc: mem.pc + 1 }
     
-    read([0x10], "IY", y: 7).must_equal(expected)
+    read([0x10], "IY", y: 7).should eq(expected)
   end
 
   it "implements immediate addressing" do
     expected = { address: mem.pc, pc: mem.pc + 1 }
 
     # note: actual value is ignored here
-    read([0xAB], "IM").must_equal(expected)
+    read([0xAB], "IM").should eq(expected)
   end
 
   it "implements implicit addressing" do
     expected = { address: nil, pc: mem.pc }
     
-    read([0xAB], "#").must_equal(expected)
+    read([0xAB], "#").should eq(expected)
   end
 
   def read(bytes, mode, params={})
