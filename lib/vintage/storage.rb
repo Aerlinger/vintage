@@ -87,5 +87,11 @@ module Vintage
     def bytes(num)
       [num].pack("v").unpack("c*")
     end
+
+    def get_range(top, bot)
+      bytes = []
+      (top..bot).each { |i| bytes << self[i] }
+      bytes
+    end
   end
 end

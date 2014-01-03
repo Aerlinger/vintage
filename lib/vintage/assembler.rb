@@ -1,6 +1,7 @@
 module Vintage
   class Assembler
-    def initialize(memory)
+    def initialize(memory, config)
+      @config   = config
       @memory   = memory
       @pc       = 0x600
       # @labels holds 'label' => 0xabcd mappings
@@ -44,29 +45,29 @@ module Vintage
     def addr_mode(param)
       case param
         when /#\$[0-9a-f]{1,2}$/
-          :imm
+          "IM"
         when /\$[0-9a-f]{1,2}$/
-          :zp
+          "ZP"
         when /\$[0-9a-f]{1,2},x$/
-          :zpx
+          "ZX"
         when /\$[0-9a-f]{1,2},y$/
-          :zpy
+          "ZY"
         when /\$[0-9a-f]{3,4}$/
-          :abs
+          "AB"
         when /^[a-z]+/
-          :abs
+          "AB"
         when /\$[0-9a-f]{3,4},x$/
-          :absx
+          "AX"
         when /\$[0-9a-f]{3,4},y$/
-          :absy
+          "AY"
         when /\(\$[0-9a-f]{3,4}\)$/
-          :ind
+          "IN"
         when /\(\$[0-9a-f]{1,2},x\)$/
-          :indx
+          "IX"
         when /\(\$[0-9a-f]{1,2}\),y$/
-          :indy
+          "IY"
         when //
-          :imp
+          "#"
       end
     end
 
@@ -83,16 +84,16 @@ module Vintage
       if [:bpl, :bmi, :bvc, :bvs,
           :bcc, :bcs, :bne, :beq].
         include?(command)
-        mode = :rel
+        mode = "@"
       else
         mode = addr_mode(param)
       end
 
       bytes = []
-      bytes << opcode(command, mode)
+      bytes << @config.opcode(command, mode)
 
       # If implied mode, it's a 1-byte instruction.
-      if [:imp].include?(mode)
+      if ["#"].include?(mode)
         return bytes
       end
 
@@ -104,16 +105,16 @@ module Vintage
         # Store a dummy value and record this location
         # to be updated in 2nd pass.
         defer_value(@pc + 1, param)
-        number = mode == :rel ? 0xff : 0xffff
+        number = mode == "@" ? 0xff : 0xffff
       end
 
       # These instructions take 1 byte.
-      if [:imm, :zp, :zpx, :zpy,
-          :indx, :indy, :rel].include?(mode)
+      if ["IM", "ZP", "ZX", "ZY",
+          "IX", "IY", "@"].include?(mode)
         (number <= 0xff) || (raise "#{command}'s number too big")
         return bytes << number
         # These instructions take 2 bytes.
-      elsif [:abs, :absx, :absy, :ind].include?(mode)
+      elsif ["AB", "AX", "AY", "IN"].include?(mode)
         (number <= 0xffff) || (raise 'number too big')
         bytes << (number & 0xff) # least-sig. byte
         bytes << (number >> 8) # most-sig. byte
@@ -121,8 +122,8 @@ module Vintage
     end
 
     def write_byte(byte)
-      @memory.set(@pc, byte)
-      @pc += 1
+      @memory[@pc] = byte
+      @pc          += 1
     end
 
     def process_line(line) # can have label, cmd, param, cmt
@@ -170,6 +171,10 @@ module Vintage
       @deferred[addr] = label
     end
 
+    def opcode(command, mode)
+      @config.opcode(command, mode)
+    end
+
     def process_file(lines)
       # First pass places machine code and records the locations
       # of referred-to labels, the values of which we'll need
@@ -180,21 +185,21 @@ module Vintage
       # Goes through the saved locations (filled with dummy
       # values) and writes the real values.
       @deferred.keys.each do |addr|
-        instr = @memory.get(addr - 1)
+        instr = @memory[addr - 1]
         # hopefully temporary quickfix
         if [0x10, 0x30, 0x50, 0x70,
             0x90, 0xb0, 0xd0, 0xf0].include?(instr)
           to_addr = label_get(@deferred[addr])
           delta   = to_addr - addr - 1
           raise 'bad rel address' unless (-128..127).include? delta
-          value = delta < 0 ? 256 + delta : delta
-          @memory.set(addr, value)
+          value         = delta < 0 ? 256 + delta : delta
+          @memory[addr] = value
         else
-          both_bytes = label_get(@deferred[addr])
-          low_byte   = both_bytes & 0x00ff
-          high_byte  = both_bytes >> 8
-          @memory.set(addr, low_byte)
-          @memory.set(addr+1, high_byte)
+          both_bytes      = label_get(@deferred[addr])
+          low_byte        = both_bytes & 0x00ff
+          high_byte       = both_bytes >> 8
+          @memory[addr]   = low_byte
+          @memory[addr+1] = high_byte
         end
       end
 

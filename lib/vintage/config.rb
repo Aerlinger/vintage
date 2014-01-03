@@ -16,6 +16,12 @@ module Vintage
 
     attr_reader :definitions, :codes
 
+    def opcode(command, mode)
+      code = @codes.find { |key, value| [value[0].upcase, value[1]] == [command.upcase, mode] }
+
+      code.first if code
+    end
+
     private
 
     ##

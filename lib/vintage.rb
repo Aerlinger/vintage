@@ -1,3 +1,4 @@
+require_relative "vintage/assembler"
 require_relative "vintage/config"
 require_relative "vintage/cpu"
 require_relative "vintage/storage"
